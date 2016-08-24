@@ -1,2 +1,6 @@
 Error1:if ($_SERVER["REQUEST_METHOD"] == "POST")
 $_SERVER means  currently executing script,so can't use this to check method in another file
+Error2:Undefined index with $_POST [registeration[username]]
+<input type="text" name="registeration[username]" id="regist_username" placeholder="E-mail">
+it's due to $_POST array doesn't find the element with index registeration[username]
+--->remove ssymbols[]
