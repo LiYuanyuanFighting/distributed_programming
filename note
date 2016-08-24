@@ -1,0 +1,2 @@
+Error1:if ($_SERVER["REQUEST_METHOD"] == "POST")
+$_SERVER means  currently executing script,so can't use this to check method in another file
