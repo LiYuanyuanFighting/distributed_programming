@@ -12,3 +12,20 @@ it's due to $_POST array doesn't find the element with index registeration[usern
 			//}
 			_$SESSION['$loggedin'] is WRONG!!!
 			it should be _$SESSION['loggedin']
+
+before always only update first row,because of the wrong position of sql,then it always take the
+value of 1st time:
+//$sql = "UPDATE book SET quantity = '$qc' where id = '$idc'";
+				for ($x = 0; $x < $index; $x++) {
+					//current value
+					$idc = $indice[$x];
+					$qc = $quantities[$x];
+					$sql = "UPDATE book SET quantity = '$qc' where id = '$idc'";
+					//echo "x is " . $x."current id is " .$idc." current quantity is  ".$qc." ";
+					if(!$conn->query($sql)) {
+						die($idc.mysqli_error($conn));
+					}
+					echo " index ".$idc. " quantity ".$qc;
+					
+				}
+--->put inside for loop,then it can get update
