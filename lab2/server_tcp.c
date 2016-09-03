@@ -130,6 +130,7 @@ int main (int argc, char *argv[]) {
 
 		//Close (connfd);
 		trace( err_msg ("(%s) - connection closed by %s", prog_name, (err>0)?"client":"server") );
+		close(connfd);
 	}
 	return 0;
 }
@@ -205,6 +206,7 @@ int sendContent(int connfd, char filename[MAXBUFL], int size) {
 		Writen(connfd, content, i);
 	} else {
 		while (size>MAXBUFL) {
+			i = 0;
 			while(i<MAXBUFL) {
 				content[i++] = fgetc(fp);
 			}
@@ -213,11 +215,13 @@ int sendContent(int connfd, char filename[MAXBUFL], int size) {
 			size = size - MAXBUFL;
 		}
 		memset(content, 0, MAXBUFL);
+		i = 0;
 		while(i<size) {
 				content[i++] = fgetc(fp);
 			}
 		Writen(connfd, content, i);
 	}
 	trace( err_msg("(%s) --- sent file '%s' to client", prog_name, filename) );	
+	fclose(fp);
 	return 0;
 }

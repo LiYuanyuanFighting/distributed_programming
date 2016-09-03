@@ -24,6 +24,8 @@
 #endif
 
 #define BUFLEN 128
+#define MAXBUFL 6526
+#define TIMEOUT 10
 
 char *prog_name;
 
@@ -106,19 +108,33 @@ int sendRequest(int s, char filename[BUFLEN]) {
 	buf[i] = '\0';
 	sprintf(buf, "%s\r\n",buf);
 	
-	result = write(s, buf, i+2);
-	if ( result != i+2 ) {
-		trace ( err_msg("(%s) error - write failed",prog_name) );
-		return -1;
-	} else {
+	Writen(s, buf, i+2);
 		trace( err_msg("(%s) - request data has been sent", prog_name) );
 		return 0;
-	}
+	
 }
 
 int checkReply(int s) {
 	char	rbuf[BUFLEN];
 	memset(rbuf,0,BUFLEN);
+	/*fd_set socket_set;
+	struct timeval timeout;
+	
+	 set connection timeout */
+	/*FD_ZERO(&socket_set); 
+	FD_SET(s, &socket_set);
+	timeout.tv_sec = TIMEOUT;
+	timeout.tv_usec = 0;
+        int n;
+	
+	if( (n = Select(FD_SETSIZE, &socket_set, NULL, NULL, &timeout)) == -1)
+	{
+		printf("select() failed\n");
+		return -1;
+	}
+	if(n > 0)
+	{*/
+	//int r = getCommand(s, rbuf, 6);
 	int r = readline_unbuffered(s, rbuf, BUFLEN);
 	if (r>0) { 
 		trace( err_msg("(%s) --- received string '%s'",prog_name,rbuf) );
@@ -128,9 +144,10 @@ int checkReply(int s) {
 		return 0;
 		} 	
 	else {
-		trace( err_msg("(%s) --- error in receiving string",prog_name) );
+		trace( err_msg("(%s) - connection closed by server",prog_name) );
 		return -1;
 	}
+	//}
 }
 
 int receiveSizeTime(int s) {
@@ -144,20 +161,40 @@ int receiveSizeTime(int s) {
 	return size;
 }
 
-int receiveContent(int s, int size, char filename[BUFLEN]) {
-	char content[BUFLEN];
-	int i = size;
-	memset(content, 0, BUFLEN);
-	if (size<=BUFLEN) {
+int receiveContent(int s, int size, char filename[MAXBUFL]) {
+	char content[MAXBUFL];
+	int i = size, n;
+	int f=0;
+	memset(content, 0, MAXBUFL);
+	FILE *fp=fopen(filename,"wb");
+   	if(NULL==fp){
+      	printf("Error opening file");
+      	exit(-1);
+    	}
+	if (size<=MAXBUFL) {
 		Readn(s, content, size);
+		f = fwrite(content,1,size,fp);
+		if (f<size) 
+		printf("error\n");
 	} else {
-		while (size>BUFLEN) {
-			Readn(s, content, BUFLEN);
-			size = size - BUFLEN;
+		while (size>MAXBUFL) {
+			n= readn(s, content, MAXBUFL);
+			if (n!=MAXBUFL) {
+				err_sys ("(%s) error - readline() failed", prog_name);
+			}
+			printf("receive %d byte data", n);
+    			f=fwrite(content,1,n,fp);
+                        if(f<n)
+                        printf("error\n"); 
+			size = size - MAXBUFL;
 		}
-		memset(content, 0, BUFLEN);
+		memset(content, 0, MAXBUFL);
 		Readn(s, content, size);
+		f=fwrite(content,1,size,fp);
+		if (f<size) 
+		printf("error\n");
 	}
 	trace( err_msg("(%s) --- received '%d' bytes, file '%s' written", prog_name, i, filename) );	
+	fclose(fp);
 	return 0;
 }
