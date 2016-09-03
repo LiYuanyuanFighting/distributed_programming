@@ -1,3 +1,7 @@
+don't forget to close the connection between server and client after timeout, otherwise after client sends request, it
+will keep on waiting. connfd = Accept...  close(connfd)  
+and don't forget to release fopen();  fclose(fp);
+
 The reason that your cookie isn't working is because you do in fact need to refresh the page to have it usable, because when you SET it, you can't use it like a variable, only a second refresh will notice its value and use it's functionality. Pain in the ***? YES!
 You must set up the page in a way that you are able to SETCOOKIE() and then REFRESH IMMEDIATELY without any consequences.
 
