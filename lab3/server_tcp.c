@@ -15,6 +15,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include  <sys/wait.h>
 
 #include "errlib.h"
 #include "sockwrap.h"
@@ -46,7 +47,7 @@ int sendContent(int connfd, char filename[MAXBUFL], int size);
 
 int main (int argc, char *argv[]) {
 
-	int listenfd, connfd, err=0, n;
+	int listenfd, connfd, err=0, n, i;
 	short port;
 	struct sockaddr_in servaddr, cliaddr;
 	socklen_t cliaddrlen = sizeof(cliaddr);
@@ -81,7 +82,7 @@ int main (int argc, char *argv[]) {
 		deadNum = 0;
 		trace( err_msg ("(%s) waiting for connections ...", prog_name) );
 		/*-------check alive child Number--------*/
-		for (int i = 0; i < childNum; i++) {
+		for (i = 0; i < childNum; i++) {
 			n = waitpid(-1, NULL, WNOHANG);
 			if (n>0)
 			   deadNum ++;
@@ -106,7 +107,9 @@ int main (int argc, char *argv[]) {
 		timeout.tv_sec = TIMEOUT;
 		timeout.tv_usec = 0;
 		n = select(FD_SETSIZE, &socket_set, NULL, NULL, &timeout);
+		printf("************n=%d************\n", n);
 		if (n==0) {
+			err = -1;
 			trace ( err_msg("(%s) Timeout waiting for data from client: connection with client will be closed", prog_name) );
 			break;
 		}
@@ -116,7 +119,7 @@ int main (int argc, char *argv[]) {
 			}
 			else {
 				err = checkRequest(connfd,filename);
-				printf("DEBUG---%d\n",err);
+				printf("DEBUG---    %d\n",err);
 				if (err <0) {
 					Sendn (connfd, MSG_ERR, strlen(MSG_ERR), 0);			
 					break;
@@ -130,7 +133,9 @@ int main (int argc, char *argv[]) {
 						break;
 						} else {
 						//printf("kokoko");
-						sendContent(connfd, filename, err);
+						err = sendContent(connfd, filename, err);
+						if (err<0) 
+						break;
 						}
 				} else {
 					break;
@@ -152,7 +157,7 @@ int main (int argc, char *argv[]) {
 		}
 	else {
 		trace( err_msg ("(%s) - the system is busy, prog_name!!!!!!!!!!!!!!!!") );
-		int pid=wait(NULL);
+		wait(NULL);
   		childNum--;
 	}
 	}
@@ -163,11 +168,16 @@ int checkRequest(int connfd,char filename[MAXBUFL]) {
 	char buf[MAXBUFL];
 	int i;
 	memset(buf, 0, MAXBUFL);
+	buf[0]='\0';
 	int n = readline_unbuffered (connfd, buf, MAXBUFL);
+	printf("buf is %s, size is %lu\n", buf,strlen(buf));
 	if (n<0) {
 		trace( err_msg("(%s) Receive name failed.", prog_name) );
 		return 1;
 	} else {
+		if (n==0) {
+			return 1;
+		}
 		char get[5];
 		strncpy(get, buf, 4);
 		get[4] = '\0';
@@ -186,8 +196,10 @@ int checkRequest(int connfd,char filename[MAXBUFL]) {
 				trace( err_msg("(%s) client asked to terminate connection") );
 				return 1;
 			}
-			else
+			else {
+				
 				return -1;
+				}
 		}
 	}
 		
@@ -224,18 +236,25 @@ int sendContent(int connfd, char filename[MAXBUFL], int size) {
 	int i=0;
 	memset(content, 0, MAXBUFL);
 	if (size<=MAXBUFL) {
-		while(i<MAXBUFL) {
+		while(i<size) {
 			content[i++] = fgetc(fp); 		
 		}
-		Writen(connfd, content, i);
+		if(writen(connfd, content, size)!= size) {
+		 trace( err_msg("(%s) error - writen() failed", prog_name));
+			 fclose(fp);
+			 return -1;
+		}
 	} else {
 		while (size>MAXBUFL) {
 			i = 0;
 			while(i<MAXBUFL) {
 				content[i++] = fgetc(fp);
 			}
-			if (writen(connfd, content, i) != i)
-			 trace( err_msg("(%s) error - writen() failed", prog_name));
+			if(writen(connfd, content, MAXBUFL)!= MAXBUFL) {
+		 trace( err_msg("(%s) error - writen() failed", prog_name));
+			 fclose(fp);
+			 return -1;
+		}
 			size = size - MAXBUFL;
 		}
 		memset(content, 0, MAXBUFL);
@@ -243,9 +262,15 @@ int sendContent(int connfd, char filename[MAXBUFL], int size) {
 		while(i<size) {
 				content[i++] = fgetc(fp);
 			}
-		Writen(connfd, content, i);
+		if(writen(connfd, content, size)!= size) {
+		 trace( err_msg("(%s) error - writen() failed", prog_name));
+			 fclose(fp);
+			 return -1;
+		}
 	}
 	trace( err_msg("(%s) --- sent file '%s' to client", prog_name, filename) );	
 	fclose(fp);
+	
+	
 	return 0;
 }

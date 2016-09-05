@@ -43,7 +43,7 @@ int receiveContent(int s, int size, char filename[BUFLEN]);
 
 int main(int argc, char *argv[]) {
 	
-	int			n, i, f, count=0;
+	int			n, i, f, count=0, fw;
 	int			s;
 	int 			result, size, tag = 0, fileNum = 0, status = REPLY, current = 0;
 	struct sockaddr_in 	saddr;
@@ -82,11 +82,16 @@ int main(int argc, char *argv[]) {
 		FD_ZERO(&socket_set);
 		FD_SET(s, &socket_set);
 		FD_SET(stdin_fd, &socket_set);
-		n = select(FD_SETSIZE, &socket_set, NULL, NULL, NULL);
+		struct timeval timeout;
+		timeout.tv_sec = TIMEOUT;
+		timeout.tv_usec = 0;
+		n = select(FD_SETSIZE, &socket_set, NULL, NULL, &timeout);
+		printf("**************n=%d***********\n",n);
 		if (n<0) {
 		trace( err_msg("(%s) - select falied", prog_name) );
 		return -1;
-		} else if (n>0) {
+		} else { 
+		if (n>0) {
 		/*--------------check from stdin--------------*/
 		int sd = FD_ISSET(stdin_fd, &socket_set);
 		if (sd>0) {
@@ -111,6 +116,7 @@ int main(int argc, char *argv[]) {
 		f = FD_ISSET(s, &socket_set);
 		printf("f = %d----------------\n",f);
 		if (f>0) {
+		printf("************status is:%d\n", status);
 		switch (status) {
 		case REPLY:
 		  result = checkReply(s);
@@ -132,26 +138,30 @@ int main(int argc, char *argv[]) {
     		  i = size;
 		  break;
 		case CONTENT:
-		  f = 0;
+		  fw = 0;
 		  memset(content, 0, MAXBUFL);
+		  printf("Begin to read............\n");
 		  if (size<=MAXBUFL) {
 		  Readn(s, content, size);
-		  f = fwrite(content,1,size,fp);
-		  if (f<size) 
+		  printf("Read1............\n");
+			/*if (n!=size) {
+			  printf("read:%s\n",content);
+				err_sys ("(%s) error - only read %d bytes, read() failed", prog_name, n);
+			}*/
+		  fw = fwrite(content,1,size,fp);
+		  if (fw<size) 
 		  printf("error\n");
+		  size = 0;
 		  } else {
-			n= readn(s, content, MAXBUFL);
-			if (n!=MAXBUFL) {
-				err_sys ("(%s) error - readline() failed", prog_name);
-			}
-			printf("receive %d byte data", n);
-    			f=fwrite(content,1,n,fp);
-                        if(f<n)
+			Readn(s, content, MAXBUFL);
+			printf("receive %d byte data", MAXBUFL);
+    			fw=fwrite(content,1,MAXBUFL,fp);
+                        if(fw<MAXBUFL)
                         printf("error\n"); 
 			size = size - MAXBUFL;
 	     }
 	if (size == 0) {
-	trace( err_msg("(%s) --- received '%d' bytes, file '%s' written", prog_name, i, filename) );	
+	trace( err_msg("(%s) --- received '%d' bytes, file '%s' written", prog_name, i, filename[current]) );	
 	fclose(fp); 
 	current++;
 	count--;
@@ -174,11 +184,11 @@ int main(int argc, char *argv[]) {
 		
 		
 	else {
-		trace ( err_msg("(%s) Timeout waiting for data from client: connection with server will be closed", prog_name) );
+		trace ( err_msg("(%s) Timeout waiting for data: connection with server will be closed", prog_name) );
 			break;
 		}
  	}
-	
+	}
 	close(s);
 	exit(0);
 }
@@ -301,3 +311,4 @@ int receiveContent(int s, int size, char filename[MAXBUFL]) {
 	fclose(fp);
 	return 0;
 }
+
