@@ -41,3 +41,42 @@ value of 1st time:
 					
 				}
 --->put inside for loop,then it can get update
+
+
+****************************Careful*******************************
+1.be careful about size of writen, eg.
+		if (size<=MAXBUFL) {
+		while(i<MAXBUFL) {
+			content[i++] = fgetc(fp); 		
+		}
+		if(writen(connfd, content, size)!= size) {
+		 trace( err_msg("(%s) error - writen() failed", prog_name));
+			 fclose(fp);
+			 return -1;
+		}
+better use while(i<size), this can also work cz fgetc will stop when reach eof, but it will have error later:
+writen(connfd,content,i) for size less than MAXBUFL
+Another case:
+     		while (size>MAXBUFL) {
+			i = 0;
+			while(i<MAXBUFL) {
+				content[i++] = fgetc(fp);
+			}
+			if(writen(connfd, content, MAXBUFL)!= MAXBUFL) {
+		 trace( err_msg("(%s) error - writen() failed", prog_name));
+			 fclose(fp);
+			 return -1;
+		}
+			size = size - MAXBUFL;
+		}
+		memset(content, 0, MAXBUFL);
+		i = 0;
+		while(i<size) {
+				content[i++] = fgetc(fp);
+			}
+		if(writen(connfd, content, size)!= size) {
+		 trace( err_msg("(%s) error - writen() failed", prog_name));
+			 fclose(fp);
+			 return -1;
+		}
+And don't use Writen in sockwrap.c for sever, cz it will cause exit
