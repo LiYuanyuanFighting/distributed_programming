@@ -1,3 +1,5 @@
+/* handling the SIGCHLD signal and The whole set gets blocked and unblocked with a single call of sigprocmask.*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -5,7 +7,6 @@
 #include <stdio.h>
 
 #include <sys/types.h>
-#include  <sys/wait.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -16,6 +17,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include  <sys/wait.h>
 #include <signal.h>
 
 #include "errlib.h"
@@ -25,7 +27,7 @@
 
 #define LISTENQ 15
 #define MAXBUFL 255
-#define TIMEOUT 120
+#define TIMEOUT 60
 
 #define MSG_ERR "-ERR\r\n"
 #define MSG_SUC "+OK\r\n"
@@ -41,7 +43,7 @@
 #endif
 
 char *prog_name;
-int childNum, connfd;
+int childNum;
 int pidArray[10];
 
 int checkRequest(int connfd,char filename[MAXBUFL]);
@@ -51,34 +53,25 @@ int sendContent(int connfd, char filename[MAXBUFL], int size);
 void sig_handlerP(int signo)
 {
 	
-	int i;
-	if (signo == SIGINT) {
-		printf("parent received SIGINT\n");
-	for (i=0; i<childNum; i++) {
-		kill(pidArray[i], SIGINT);
-	}
-	for (i=0; i<childNum; i++) {
-		wait(NULL);
-	}
+	int i, deadNum ,n;
+	if (signo == SIGCHLD) {
+		printf("parent received SIGCHLD\n");
+	deadNum = 0;
+		/*-------check alive child Number--------*/
+		for (i = 0; i < childNum; i++) {
+			n = waitpid(-1, NULL, WNOHANG);
+			if (n>0)
+			   deadNum ++;
+		}
+		childNum -= deadNum;
 		
-		exit(0);
 		}
 }
 
-/*void sig_handlerC(int signo)
-{
-	
-	int i;
-	if (signo == SIGINT) {
-		printf("child %d received SIGINT\n", getpid());
-		Close(connfd);
-		exit(0);
-		}
-}*/
 
 int main (int argc, char *argv[]) {
 
-	int listenfd, err=0, n, i, pid=0;
+	int listenfd, connfd, err=0, n;
 	short port;
 	struct sockaddr_in servaddr, cliaddr;
 	socklen_t cliaddrlen = sizeof(cliaddr);
@@ -86,11 +79,11 @@ int main (int argc, char *argv[]) {
 
 	/* for errlib to know the program name */
 	prog_name = argv[0];
-	childNum = atoi(argv[2]);
+	int childNum = 0;
 	
 	/* check arguments */
-	if (argc!=3)
-		err_quit("Usage: % <port> <child number>");
+	if (argc!=2)
+		err_quit("Usage: % <port>");
 	port=atoi(argv[1]);
 
 	/* create socket */
@@ -109,27 +102,21 @@ int main (int argc, char *argv[]) {
 
 	Listen(listenfd, LISTENQ);
 
-	i = 0;
-	while(i<childNum) {
-		pid=fork();
-		pidArray[i] = pid;
-		if(pid) {
-			i++;
-		} else {
-			break;
-		}
-	}
-	while (pid==0) {
-		/*if (signal(SIGINT, sig_handlerC) == SIG_ERR) {
-			trace( err_msg ("(%s) - %d error in catching SIGINT", prog_name, getpid()) );
-		}*/
-		trace( err_msg ("(%s) %d waiting for connections ...", prog_name, getpid()) );
-		connfd = Accept (listenfd, (SA*) &cliaddr, &cliaddrlen);
-
-		trace ( err_msg("(%s) - %d new connection from client %s:%u", prog_name, getpid(), inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port)) );
+	while (1) {
+		if (signal(SIGCHLD, sig_handlerP) == SIG_ERR) {
+			trace( err_msg ("(%s) - Error in catching SIGINT", prog_name) );
+		}		
+		trace( err_msg ("(%s) waiting for connections ...", prog_name) );
+		trace( err_msg ("(%s) I have %d children", prog_name, childNum) );
+		if (childNum<3) {
 		
+		connfd = Accept (listenfd, (SA*) &cliaddr, &cliaddrlen);
+		if ( !(Fork()>0) ) {	
+		close (listenfd);
+		trace ( err_msg("(%s) - %d new connection from client %s:%u", prog_name, getpid(), inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port)) );
+		childNum ++;
 		while(1) {
-		trace ( err_msg("(%s) - %d waiting for commands ...", prog_name, getpid()) );
+		trace ( err_msg("(%s) - waiting for commands ...", prog_name) );
 		memset(filename, 0, MAXBUFL);
 		fd_set socket_set;
 		struct timeval timeout;
@@ -138,7 +125,9 @@ int main (int argc, char *argv[]) {
 		timeout.tv_sec = TIMEOUT;
 		timeout.tv_usec = 0;
 		n = select(FD_SETSIZE, &socket_set, NULL, NULL, &timeout);
+		printf("************n=%d************\n", n);
 		if (n==0) {
+			err = -1;
 			trace ( err_msg("(%s) Timeout waiting for data from client: connection with client will be closed", prog_name) );
 			break;
 		}
@@ -148,7 +137,7 @@ int main (int argc, char *argv[]) {
 			}
 			else {
 				err = checkRequest(connfd,filename);
-				printf("DEBUG---%d\n",err);
+				printf("DEBUG---    %d\n",err);
 				if (err <0) {
 					Sendn (connfd, MSG_ERR, strlen(MSG_ERR), 0);			
 					break;
@@ -162,7 +151,9 @@ int main (int argc, char *argv[]) {
 						break;
 						} else {
 						//printf("kokoko");
-						sendContent(connfd, filename, err);
+						err = sendContent(connfd, filename, err);
+						if (err<0) 
+						break;
 						}
 				} else {
 					break;
@@ -174,17 +165,25 @@ int main (int argc, char *argv[]) {
 
 		Close (connfd);
 		printf("err = %d---------------\n",err);
-		trace( err_msg ("(%s) - %d connection closed by %s", prog_name, getpid(), (err>=0)?"client":"server") );
-		
-	}
-	//parent waits for children 
-	if(pid>0) {
-		Close(listenfd);
-		if (signal(SIGINT, sig_handlerP) == SIG_ERR) {
-			trace( err_msg ("(%s) - Error in catching SIGINT", prog_name) );
+		trace( err_msg ("(%s) - connection closed by %s", prog_name, (err>=0)?"client":"server") );
+		//close(connfd);
+		trace( err_msg ("(%s) - child %d exit", prog_name, getpid()) );
+		exit(0);
+	  }
+	  else 
+	  	childNum ++;
 		}
-		   while(1) 
-        sleep(1);
+	else {
+		trace( err_msg ("(%s) - the system is busy, prog_name!!!!!!!!!!!!!!!!") );
+		/*disable the SIGCHLD signal receipt before entering blocking wait()*/
+		sigset_t signal_set;
+		sigemptyset(&signal_set);
+		sigaddset(&signal_set, SIGCHLD);//not SIGCHILD
+		sigprocmask(SIG_BLOCK, &signal_set, NULL);
+		wait(NULL);
+		childNum--;
+		sigprocmask(SIG_UNBLOCK, &signal_set, NULL);
+	}
 	}
 	return 0;
 }
@@ -193,11 +192,16 @@ int checkRequest(int connfd,char filename[MAXBUFL]) {
 	char buf[MAXBUFL];
 	int i;
 	memset(buf, 0, MAXBUFL);
+	buf[0]='\0';
 	int n = readline_unbuffered (connfd, buf, MAXBUFL);
+	printf("buf is %s, size is %lu\n", buf,strlen(buf));
 	if (n<0) {
 		trace( err_msg("(%s) Receive name failed.", prog_name) );
 		return 1;
 	} else {
+		if (n==0) {
+			return 1;
+		}
 		char get[5];
 		strncpy(get, buf, 4);
 		get[4] = '\0';
@@ -216,8 +220,10 @@ int checkRequest(int connfd,char filename[MAXBUFL]) {
 				trace( err_msg("(%s) client asked to terminate connection") );
 				return 1;
 			}
-			else
+			else {
+				
 				return -1;
+				}
 		}
 	}
 		
@@ -292,4 +298,3 @@ int sendContent(int connfd, char filename[MAXBUFL], int size) {
 	
 	return 0;
 }
-
