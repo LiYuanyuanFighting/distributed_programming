@@ -1,3 +1,6 @@
+remember not to close xdr stream built by fdopen before the final transmission, cz it can close the connection with the socket,
+like before bad file descriptor(fdopen), segmentation fault(xdr_message)
+
 don't forget to close the connection between server and client after timeout, otherwise after client sends request, it
 will keep on waiting. connfd = Accept...  close(connfd)  
 and don't forget to release fopen();  fclose(fp);
