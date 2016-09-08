@@ -1,3 +1,14 @@
+SELECT date, operation, sum( quantity ) AS q, sum( quantity * price ) AS m, 
+CASE 
+WHEN operation = "sell" THEN min(stocks)
+
+ELSE max(stocks)
+END AS stocks , balance
+FROM history
+WHERE email = "u1@p.it"
+GROUP BY date
+ORDER BY id DESC 
+
 good habit to put exit() after header(), cz The header is only a line of data asking the browser to redirect. The rest of the page 
 will still be served by PHP and can be looked at by the client by simply preventing the header command from executing.
 If you don't prevent it, PHP will send out the whole body even after a header call. That body is fully available to the recipient without any 
