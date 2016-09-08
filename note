@@ -1,3 +1,8 @@
+good habit to put exit() after header(), cz The header is only a line of data asking the browser to redirect. The rest of the page 
+will still be served by PHP and can be looked at by the client by simply preventing the header command from executing.
+If you don't prevent it, PHP will send out the whole body even after a header call. That body is fully available to the recipient without any 
+special hacking skills.
+
 remember not to close xdr stream built by fdopen before the final transmission, cz it can close the connection with the socket,
 like before bad file descriptor(fdopen), segmentation fault(xdr_message)
 
