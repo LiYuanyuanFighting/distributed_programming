@@ -1,5 +1,6 @@
 1.memset every time to clear the buffer
 2.file size!
+3.parameter order, especially the orders of port number and ip address
 
 SELECT date, operation, sum( quantity ) AS q, sum( quantity * price ) AS m, 
 CASE 
