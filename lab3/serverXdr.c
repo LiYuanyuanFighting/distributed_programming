@@ -328,7 +328,7 @@ int sendContent(int connfd, char filename[MAXBUFL], int size) {
 	int i=0;
 	memset(content, 0, MAXBUFL);
 	if (size<=MAXBUFL) {
-		while(i<MAXBUFL) {
+		while(i<size) {
 			content[i++] = fgetc(fp); 		
 		}
 		Writen(connfd, content, i);
