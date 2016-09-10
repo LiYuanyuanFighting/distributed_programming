@@ -1,3 +1,6 @@
+1.memset every time to clear the buffer
+2.file size!
+
 SELECT date, operation, sum( quantity ) AS q, sum( quantity * price ) AS m, 
 CASE 
 WHEN operation = "sell" THEN min(stocks)
