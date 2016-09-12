@@ -1,3 +1,5 @@
+ http://stackoverflow.com/questions/5431941/why-is-while-feof-file-always-wrong
+ 
  The send() call may be used only when the  socket  is  in  a  connected
        state  (so  that the intended recipient is known).  The only difference
        between send() and write(2) is the presence  of  flags.   With  a  zero
