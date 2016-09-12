@@ -39,7 +39,7 @@
 #define MSG_SUC "+OK\r\n"
 #define SA struct sockaddr
 #define	LISTENQ		1024	/* 2nd argument to listen() */
-#define PATH "/home/stud/s217403/Documents/dp/for_exam/exam/other_samples/exam_dp_sep2014"
+#define PATH "/export/home/stud/s217403/Documents/dp/for_exam/exam/other_samples/exam_dp_sep2014"
 char *prog_name;
 int childNum;
 int pidArray[10];
@@ -219,7 +219,10 @@ int uploadContent(int connfd, char filename[MAXBUFL], struct sockaddr_storage	cl
         printf("kokoko1\n");
 	sprintf(path, "%s/%s_%s", PATH, ip, port);
 	printf("%s\n", path);
-	mkdir (path, 0777);
+	n = mkdir (path, 0777);
+	if (n<0) {
+		perror("");
+	}
 	sprintf(path, "%s/%s", path, filename);
 	FILE *fp=fopen(path,"wb");
    	if(NULL==fp){
