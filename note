@@ -1,3 +1,5 @@
+pay attention to ntohl.... time or size or other number will be changed
+
 to change the value passed in the function,use address &, otw the value won't be changed
 
  http://stackoverflow.com/questions/5431941/why-is-while-feof-file-always-wrong
