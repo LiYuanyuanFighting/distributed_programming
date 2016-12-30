@@ -1,3 +1,7 @@
+在Unix系统下，如果send在等待协议传送数据时网络断开的话，调用send的进程会接收到一个SIGPIPE信号，进程对该信号的默认处理是进程终止。
+在Unix系统下，如果recv函数在等待协议接收数据时网络断开了，那么调用recv的进程会接收到一个SIGPIPE信号，进程对该信号的默认处理是进程终止。
+[reference](http://www.cppblog.com/elva/archive/2008/09/10/61544.html)
+
 pay attention to ntohl.... time or size or other number will be changed
 
 to change the value passed in the function,use address &, otw the value won't be changed
