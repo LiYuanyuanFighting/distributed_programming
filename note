@@ -1,3 +1,11 @@
+don't know why I can't receive a SIGPIPE in my whole application(client23.c in xdr), in my test   
+file(clientTest.c) with only send, i can get.
+Just remember, when server closes the connection, it won't send SIGPIPE, can find FIN in wireshark, but
+when u try to send, u will get RST from server, then get SIGPIPE, but don't know what is wrong with my side
+with TCP you get SIGPIPE if your end of the connection has received an RST from the other end. What this also means is  
+that if you were using select instead of write, the select would have indicated 
+the socket as being readable, since the RST is there for you to read (read will return an error with errno set to ECONNRESET).
+
 在Unix系统下，如果send在等待协议传送数据时网络断开的话，调用send的进程会接收到一个SIGPIPE信号，进程对该信号的默认处理是进程终止。
 在Unix系统下，如果recv函数在等待协议接收数据时网络断开了，那么调用recv的进程会接收到一个SIGPIPE信号，进程对该信号的默认处理是进程终止。
 [reference](http://www.cppblog.com/elva/archive/2008/09/10/61544.html)
