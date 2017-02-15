@@ -1,0 +1,70 @@
+Distributed Programming I
+Web Programming Test Assignment
+Submission deadline January 25, 2017, 11.59p.m.
+Build a simplified version of a website for managing user comments (with associated scores and feedbacks given by
+other users) related to the purchase of a given item via an ecommerce system. For the sake of simplicity, the web site
+considers only one item. The website must have the following features:
+1. Any visitor can access the website without authentication to see the list of comments related to the purchased item,
+including a score (from 0 to 5) and the feedbacks given to the comment itself by other users (see below). At the
+beginning of the list, the average value of the scores must be displayed.
+2. Each user can sign up freely for the website, by providing only name, surname, password and a valid email address.
+When a user signs up successfully for the website, he/she is automatically logged in.
+3. A logged-in user can insert a new comment related to the item, which must be accompanied by a corresponding score
+from 0 to 5. A user cannot insert more than one comment. A logged-in user can also express a usefulness feedback
+concerning the score associated to a comment expressed by any other user, by assigning it the value of +1 or -1. This
+feedback does not modify the score of the comment, rather it increments or decrements the total feedback given to the
+comment itself. The initial total feedback of a new comment is zero. Each user can give a feedback to a comment up to
+a maximum of three times. It is not necessary to keep track of every single feedback given by one user to a comment,
+but it is necessary to avoid that the user inserts more than three feedbacks for a single comment.
+4. For simplicity, a user cannot modify his/her own comment, but he/she can only delete the comment and, possibly,
+after having deleted it, insert a new one. In this case, the score and the total feedback associated to the old comment
+must be deleted from the system. A user can delete only his/her own comment and not those belonging to other users.
+5. In the delivered project there must be three registered users, u1@p.it, u2@p.it, and u3@p.it, with passwords p1, p2
+and p3, respectively. Each one of these users must have already made a comment, with scores 3, 4, and 1, respectively.
+Moreover, the first user must have inserted a feedback equal to +3 (that is, three times +1) to the comment of the second
+user, and +1 to the comment of the third user. The second user must have inserted a -1 to the comment of the first user
+and -2 (that is, two times -1) to the comment of the third user. The third user must not have expressed any feedback to
+the comments of the other users. The final situation thus shall be as follows:
+- 1st comment: score 3, feedback -1
+- 2nd comment: score 4, feedback +3
+- 3rd comment: score 1, feedback -1
+6. Authentication by username and password must be performed whenever the user logs into the system. Authentication
+must remain valid if no more than two minutes have elapsed since the last page load. If the user requests an operation
+after the deadline of 2 minutes since the previous page load, the operation does not have effect and the user is forced to
+re-authenticate with username and password. HTTPS is mandatory for the registration/authentication and in every part
+of the site concerning information related to a registered/authenticated user.
+7. The general layout of the web pages will contain: a header in the upper part, a navigation bar on the left side with
+links or buttons to carry out the possible operations and a central part which is used for the main operation.
+8. Cookies and Javascript must be enabled, otherwise the website may not work properly (in that case, for what 
+concerns cookies, the user must be alerted and the website navigation must be forbidden, for what concerns Javascript
+the user must be informed). Forms should be provided with small informational messages in order to explain the
+meaning of the different fields. These messages may be put within the fields themselves or may appear when the mouse
+pointer is over them.
+9. The more uniform the views and the layouts are by varying the adopted browser, the better.
+10. Extra requirement (only for students having the 8-credits course): the list of comments (visible by all visitors) must
+include initially only up to 3 comments and a button labelled “More Comments” that can be used to expand the list with
+more comments. Each pressure of the button must add 3 more items to the list. AJAX has to be used in the client side in
+order to get more items of the list from the server. The AJAX request must be issued just after having expanded the list,
+so that new items are loaded and made immediately available to be viewed as soon as the button is pressed. The AJAX
+request must use XML for data transfer.
+Submission instructions:
+The instructions already published in the Material folder of the course web page for the installation on the
+cclix11.polito.it, still hold. Furthermore, you need to submit your project (the same that you installed on cclix11) in a
+zip file named sXXXXXX.zip (without blank spaces in the name) to the following web site:
+https://pad.polito.it/enginframe/dp1/dp1.xml (from inside the Politecnico network) or
+https://pad.polito.it:8080/enginframe/dp1/dp1.xml (from outside).
+In addition:
+1. The sql script included in the zip file (submitted to pad.polito.it) to create the database must have a name with the
+following pattern: sXXXXXX.sql (where XXXXXX is your own student id).
+2. The main page of your web site must be put in a file named index.html or index.php in your SECRET_FILDER such
+that the website can be accessed at the url http://cclix11.polito.it/~sXXXXXX/SECRET_FOLDER without adding any
+other resource name at the end of the SECRET_FOLDER.
+3. DO NOT use absolute links
+WARNING: The system that accepts your projects, works in an automatic way and it will stop accepting
+submissions at the scheduled deadline. For this reason, we recommend you DO NOT submit your work in the
+very last minutes before the final deadline.
+In case of any doubt and question related to the project, please firstly visit the forum in the course website in order to
+check if other students have already asked the same question. Otherwise use the forum (not the teacher email) to ask
+your question so that the response will be available to all students.
+The forum is to be used exclusively for requests of clarification about the text of the assignment and not for requesting
+help about how to solve it or how to solve specific problems encountered during the execution of the assignment
